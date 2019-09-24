@@ -17,9 +17,10 @@ var (
 // Struct encapsulates a struct type to provide several high level functions
 // around the struct.
 type Struct struct {
-	raw     interface{}
-	value   reflect.Value
-	TagName string
+	raw                interface{}
+	value              reflect.Value
+	TagName            string
+	IsFlattenAnonymous bool
 }
 
 // New returns a new *Struct with the struct s. It panics if the s's kind is
@@ -57,6 +58,8 @@ func New(s interface{}) *Struct {
 //
 //   // The FieldStruct's fields will be flattened into the output map.
 //   FieldStruct time.Time `structs:",flatten"`
+// A tag value with the option of "noflatten" used in a struct field is to force NOT flatten its fields
+// even IsFlattenAnonymous is true
 //
 // A tag value with the option of "omitnested" stops iterating further if the type
 // is a struct. Example:
@@ -139,9 +142,11 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 			continue
 		}
 
-		if isSubStruct && (tagOpts.Has("flatten")) {
+		if isSubStruct && ((field.Anonymous && s.IsFlattenAnonymous && !tagOpts.Has("noflatten")) || (tagOpts.Has("flatten"))) {
 			for k := range finalVal.(map[string]interface{}) {
-				out[k] = finalVal.(map[string]interface{})[k]
+				if out[k] == nil {
+					out[k] = finalVal.(map[string]interface{})[k]
+				}
 			}
 		} else {
 			out[name] = finalVal
