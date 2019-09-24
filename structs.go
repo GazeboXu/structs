@@ -143,9 +143,10 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 		}
 
 		if isSubStruct && ((field.Anonymous && s.IsFlattenAnonymous && !tagOpts.Has("noflatten")) || (tagOpts.Has("flatten"))) {
-			for k := range finalVal.(map[string]interface{}) {
-				if out[k] == nil {
-					out[k] = finalVal.(map[string]interface{})[k]
+			mapValue := finalVal.(map[string]interface{})
+			for k := range mapValue {
+				if out[k] == nil { // lowest field has high priority
+					out[k] = mapValue[k]
 				}
 			}
 		} else {
